@@ -1,0 +1,162 @@
+package eu.imusingaura.info;
+
+import net.md_5.bungee.api.ChatColor;
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
+
+import java.util.*;
+
+import static org.bukkit.Bukkit.getServer;
+
+public class Inventories extends Commands implements Listener {
+
+    String player, target;
+    Inventory inv;
+
+
+    public Inventories(String player, String target) {
+        this.player = player;
+        this.target = target;
+
+
+        inv = getServer().createInventory(null, 36, "§5Info");
+
+        ItemStack redPane = createItem(Material.STAINED_GLASS_PANE, "§5Info", Arrays.asList("§7InfoGUI degli staffer!"), (byte) 10);
+
+        inv.setItem(35, createItem(Material.WOOL, "&5Esci", Arrays.asList("&7Esci dal menu!"), (byte) 14));
+
+        inv.setItem(10, createItem(Material.PAPER, "§5History", Arrays.asList("§7Lista dei mute, ban, kick del player!")));
+
+        inv.setItem(16, createItem(Material.ENDER_PEARL, "§5Ping", Arrays.asList("§7Controlla il ping del player!")));
+
+        inv.setItem(22, createItem(Material.GLASS_BOTTLE, "§5Accounts:", Arrays.asList("§7Controlla il dupe ip del player!")));
+
+        inv.setItem(4, createItem(Material.LAVA_BUCKET, "§5TP", Arrays.asList("§7Clicca per tipparti da lui!")));
+
+        inv.setItem(29, createItem(Material.WATER_BUCKET, "§5Freeze", Arrays.asList("§7Clicca per freezare il player!")));
+
+        inv.setItem(33, createItem(Material.REDSTONE, "§5Torna Indietro", Arrays.asList("§7Clicca per tornare indietro!")));
+
+       ArrayList<Integer> list = new ArrayList<>();
+       list.add(4);
+       list.add(10);
+       list.add(16);
+       list.add(22);
+       list.add(29);
+       list.add(33);
+       list.add(35);
+       for(int i = 0; i < 35; i++) {
+           if(!list.contains(i)) {
+               inv.setItem(i, redPane);
+           }
+       }
+        inv.setItem(27, skull(target));
+        Core.registerEvent(this);
+        openInventory();
+    }
+
+    public void openInventory() {
+        Bukkit.getPlayer(player).openInventory(inv);
+    }
+
+    public void closeInventory() {
+        Bukkit.getPlayer(player).closeInventory();
+    }
+
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
+        if (event.getInventory().equals(inv)) {
+            Player p = (Player) event.getWhoClicked();
+            event.setCancelled(true);
+            ClickType type = event.getClick();
+            if (type.equals(ClickType.LEFT)) {
+                ItemStack item = event.getCurrentItem();
+                if (item != null) {
+                    event.setCancelled(item.getType() == Material.SKULL_ITEM);
+                    event.setCancelled(item.getType() == Material.STAINED_GLASS_PANE);
+
+                    if (item.getType() == Material.WOOL) {
+                        InventoryClickEvent.getHandlerList().unregister(this);
+                        event.getWhoClicked().closeInventory();
+                        return;
+                    }
+                    if (item.getType() == Material.PAPER) {
+                        getServer().dispatchCommand(event.getWhoClicked(), "history " + target2.getName());
+                        return;
+                    }
+                    if (item.getType() == Material.ENDER_PEARL) {
+                        getServer().dispatchCommand(event.getWhoClicked(), "ping " + target2.getName());
+                        closeInventory();
+                        return;
+                    }
+                    if (item.getType() == Material.GLASS_BOTTLE) {
+                        getServer().dispatchCommand(event.getWhoClicked(), "dupeip " + target2.getName());
+                        closeInventory();
+                        return;
+                    }
+                    if (item.getType() == Material.LAVA_BUCKET) {
+                        getServer().dispatchCommand(event.getWhoClicked(), "tp " + target2.getName());
+                        getServer().dispatchCommand(event.getWhoClicked(), "vanish " + p.getName());
+                        closeInventory();
+                        return;
+                    }
+                    if (item.getType() == Material.WATER_BUCKET) {
+                        getServer().dispatchCommand(event.getWhoClicked(), "freeze " + target2.getName());
+                        closeInventory();
+                        return;
+                    }
+                    if (item.getType() == Material.REDSTONE) {
+                        getServer().dispatchCommand(event.getWhoClicked(), "spawn " + p.getName());
+                        p.setGameMode(GameMode.SURVIVAL);
+                        closeInventory(); //apposto
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+
+    private ItemStack createItem(Material material, String name, List<String> lore, byte data) {
+        ItemStack itemStack = new ItemStack(material, 1, data);
+        ItemMeta itemMeta = itemStack.getItemMeta();
+        itemMeta.setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
+        List<String> tempLore = new ArrayList<>();
+        lore.forEach(s -> tempLore.add(ChatColor.translateAlternateColorCodes('&', s)));
+        itemMeta.setLore(tempLore);
+        itemStack.setItemMeta(itemMeta);
+        return itemStack;
+    }
+
+    private ItemStack createItem(Material material, String name, List<String> lore) {
+        ItemStack itemStack = new ItemStack(material);
+        ItemMeta itemMeta = itemStack.getItemMeta();
+        itemMeta.setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
+        List<String> tempLore = new ArrayList<>();
+        lore.forEach(s -> tempLore.add(ChatColor.translateAlternateColorCodes('&', s)));
+        itemMeta.setLore(tempLore);
+        itemStack.setItemMeta(itemMeta);
+
+        return itemStack;
+    }
+
+    public static ItemStack skull(String nick) {
+        ItemStack skull = new ItemStack(Material.SKULL_ITEM, 1, (byte) 3);
+        SkullMeta meta = (SkullMeta) skull.getItemMeta();
+        meta.setDisplayName("§5Target");
+        meta.setOwner(nick);
+        meta.setLore(Arrays.asList("§7Player: " + nick));
+        skull.setItemMeta(meta);
+        return skull;
+    }
+}
